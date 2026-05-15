@@ -1,0 +1,127 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build ${{ matrix.target }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── Linux ────────────────────────────────────────────────────────────
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            use_cross: false
+            asset_name: rtkmcp-linux-x86_64
+
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+            use_cross: true
+            asset_name: rtkmcp-linux-aarch64
+
+          # ── macOS ────────────────────────────────────────────────────────────
+          - target: x86_64-apple-darwin
+            runner: macos-13          # Intel runner
+            use_cross: false
+            asset_name: rtkmcp-macos-x86_64
+
+          - target: aarch64-apple-darwin
+            runner: macos-14          # Apple Silicon runner
+            use_cross: false
+            asset_name: rtkmcp-macos-aarch64
+
+          # ── Windows ──────────────────────────────────────────────────────────
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            use_cross: false
+            asset_name: rtkmcp-windows-x86_64.exe
+
+          - target: aarch64-pc-windows-msvc
+            runner: windows-latest
+            use_cross: false
+            asset_name: rtkmcp-windows-aarch64.exe
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Install cross (Linux ARM64)
+        if: matrix.use_cross
+        run: cargo install cross --git https://github.com/cross-rs/cross
+
+      - name: Build (native)
+        if: "!matrix.use_cross"
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Build (cross)
+        if: matrix.use_cross
+        run: cross build --release --target ${{ matrix.target }}
+
+      # ── Rename binary ───────────────────────────────────────────────────────
+      - name: Rename binary (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          cp target/${{ matrix.target }}/release/rtkmcp \
+             ${{ matrix.asset_name }}
+          chmod +x ${{ matrix.asset_name }}
+
+      - name: Rename binary (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Copy-Item target\${{ matrix.target }}\release\rtkmcp.exe `
+                    ${{ matrix.asset_name }}
+
+      # ── Upload to release ───────────────────────────────────────────────────
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.asset_name }}
+          generate_release_notes: true
+
+  # ── Checksums ───────────────────────────────────────────────────────────────
+  checksums:
+    name: Generate checksums
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all release assets
+        uses: robinraju/release-downloader@v1
+        with:
+          tag: ${{ github.ref_name }}
+          fileName: "rtkmcp-*"
+          out-file-path: assets/
+
+      - name: Generate SHA256 checksums
+        run: |
+          cd assets
+          sha256sum rtkmcp-* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Upload checksums
+        uses: softprops/action-gh-release@v2
+        with:
+          files: assets/SHA256SUMS.txt
