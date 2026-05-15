@@ -9,8 +9,11 @@ pub fn call(args: &Value) -> CallToolResult {
         Some(c) => c.to_string(),
         None => return CallToolResult::error("Missing required argument: command"),
     };
-    let cwd    = args.get("cwd").and_then(|v| v.as_str());
-    let filter = args.get("filter").and_then(|v| v.as_str()).unwrap_or("auto");
+    let cwd = args.get("cwd").and_then(|v| v.as_str());
+    let filter = args
+        .get("filter")
+        .and_then(|v| v.as_str())
+        .unwrap_or("auto");
 
     match run_command(&command, cwd) {
         Ok((stdout, stderr, code)) => {
@@ -21,7 +24,7 @@ pub fn call(args: &Value) -> CallToolResult {
                 noise::reduce(&raw)
             };
             let output = if output.trim().is_empty() && code == 0 {
-                format!("OK (exit 0)\n[command produced no output]")
+                "OK (exit 0)\n[command produced no output]".to_string()
             } else {
                 output
             };
@@ -70,16 +73,16 @@ fn run_command(command: &str, cwd: Option<&str>) -> anyhow::Result<(String, Stri
     let output = cmd.output()?;
     let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
     let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
-    let code   = output.status.code().unwrap_or(1);
+    let code = output.status.code().unwrap_or(1);
 
     Ok((stdout, stderr, code))
 }
 
 fn combine_output(stdout: &str, stderr: &str) -> String {
     match (stdout.trim().is_empty(), stderr.trim().is_empty()) {
-        (true,  true)  => String::new(),
-        (true,  false) => stderr.to_string(),
-        (false, true)  => stdout.to_string(),
+        (true, true) => String::new(),
+        (true, false) => stderr.to_string(),
+        (false, true) => stdout.to_string(),
         (false, false) => format!("{}\n{}", stdout.trim_end(), stderr.trim_end()),
     }
 }
@@ -94,7 +97,7 @@ fn shell_split(input: &str) -> Vec<String> {
     for ch in input.chars() {
         match ch {
             '\'' if !in_double => in_single = !in_single,
-            '"'  if !in_single => in_double = !in_double,
+            '"' if !in_single => in_double = !in_double,
             ' ' | '\t' if !in_single && !in_double => {
                 if !current.is_empty() {
                     tokens.push(std::mem::take(&mut current));
@@ -115,11 +118,17 @@ mod tests {
 
     #[test]
     fn shell_split_basic() {
-        assert_eq!(shell_split("cargo build --release"), vec!["cargo", "build", "--release"]);
+        assert_eq!(
+            shell_split("cargo build --release"),
+            vec!["cargo", "build", "--release"]
+        );
     }
 
     #[test]
     fn shell_split_quoted() {
-        assert_eq!(shell_split(r#"git log --format="%H %s""#), vec!["git", "log", "--format=%H %s"]);
+        assert_eq!(
+            shell_split(r#"git log --format="%H %s""#),
+            vec!["git", "log", "--format=%H %s"]
+        );
     }
 }
