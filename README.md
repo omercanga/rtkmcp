@@ -2,6 +2,10 @@
 
 Token-efficient MCP server for LLM development tools. Filters command output before it reaches your LLM context — **60-90% token savings** with zero data loss.
 
+> **Based on [rtk-ai/rtk](https://github.com/rtk-ai/rtk)** — Rust Token Killer by Patrick Szymkowiak (MIT).
+> rtkmcp extracts the core filtering logic from RTK and re-packages it as a standalone MCP server
+> that works with any MCP-compatible LLM client without requiring hooks or a separate RTK installation.
+
 ## Install
 
 **macOS / Linux — one command:**
@@ -199,6 +203,31 @@ LLM (Claude / Cursor / Windsurf / ...)
 
 ---
 
+## Attribution
+
+rtkmcp is built on the filtering logic from **[rtk-ai/rtk](https://github.com/rtk-ai/rtk)** (Rust Token Killer), created by [Patrick Szymkowiak](https://github.com/pszymkowiak) and the RTK contributors.
+
+The following components were ported and adapted from RTK's source:
+
+| rtkmcp module | Source in rtk-ai/rtk |
+|---------------|----------------------|
+| `filters/lang.rs` | `src/core/filter.rs` — `MinimalFilter`, `AggressiveFilter`, language detection |
+| `filters/ansi.rs` | `src/core/utils.rs` — `strip_ansi()` |
+| `filters/truncate.rs` | `src/core/filter.rs` — `smart_truncate()` |
+| `filters/git.rs` | `src/cmds/git/git.rs` — `compact_diff()`, `filter_log_output()`, `format_status_output()` |
+| `filters/build.rs` | `src/cmds/rust/cargo_cmd.rs` — `BlockStreamFilter`, `CargoBuildHandler` |
+| `filters/noise.rs` | `src/core/runner.rs` — noise line patterns |
+
+**Original license:** MIT — Copyright © 2024 Patrick Szymkowiak
+
+rtkmcp is a derivative work and is distributed under the same MIT license.
+The MCP server layer, tool definitions, cross-platform distribution pipeline,
+and this repository are authored by [omercanga](https://github.com/omercanga).
+
+---
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE)
+
+Original RTK code portions: MIT © 2024 Patrick Szymkowiak ([rtk-ai/rtk](https://github.com/rtk-ai/rtk))
