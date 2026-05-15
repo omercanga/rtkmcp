@@ -20,7 +20,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # ── Linux ────────────────────────────────────────────────────────────
           - target: x86_64-unknown-linux-gnu
             runner: ubuntu-latest
             use_cross: false
@@ -31,27 +30,21 @@ jobs:
             use_cross: true
             asset_name: rtkmcp-linux-aarch64
 
-          # ── macOS ────────────────────────────────────────────────────────────
-          - target: x86_64-apple-darwin
-            runner: macos-13          # Intel runner
-            use_cross: false
-            asset_name: rtkmcp-macos-x86_64
-
+          # macos-latest is now ARM64 (M-series); cross-compile for Intel too
           - target: aarch64-apple-darwin
-            runner: macos-14          # Apple Silicon runner
+            runner: macos-latest
             use_cross: false
             asset_name: rtkmcp-macos-aarch64
 
-          # ── Windows ──────────────────────────────────────────────────────────
+          - target: x86_64-apple-darwin
+            runner: macos-latest
+            use_cross: false
+            asset_name: rtkmcp-macos-x86_64
+
           - target: x86_64-pc-windows-msvc
             runner: windows-latest
             use_cross: false
             asset_name: rtkmcp-windows-x86_64.exe
-
-          - target: aarch64-pc-windows-msvc
-            runner: windows-latest
-            use_cross: false
-            asset_name: rtkmcp-windows-aarch64.exe
 
     steps:
       - uses: actions/checkout@v4
@@ -68,8 +61,8 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: ${{ runner.os }}-cargo-
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-${{ matrix.target }}-cargo-
 
       - name: Install cross (Linux ARM64)
         if: matrix.use_cross
@@ -83,43 +76,36 @@ jobs:
         if: matrix.use_cross
         run: cross build --release --target ${{ matrix.target }}
 
-      # ── Rename binary ───────────────────────────────────────────────────────
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'
         run: |
-          cp target/${{ matrix.target }}/release/rtkmcp \
-             ${{ matrix.asset_name }}
+          cp target/${{ matrix.target }}/release/rtkmcp ${{ matrix.asset_name }}
           chmod +x ${{ matrix.asset_name }}
 
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
-        run: |
-          Copy-Item target\${{ matrix.target }}\release\rtkmcp.exe `
-                    ${{ matrix.asset_name }}
+        run: Copy-Item target\${{ matrix.target }}\release\rtkmcp.exe ${{ matrix.asset_name }}
 
-      # ── Upload to release ───────────────────────────────────────────────────
       - name: Upload release asset
         uses: softprops/action-gh-release@v2
         with:
           files: ${{ matrix.asset_name }}
           generate_release_notes: true
 
-  # ── Checksums ───────────────────────────────────────────────────────────────
   checksums:
     name: Generate checksums
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all release assets
+      - name: Download release assets
         uses: robinraju/release-downloader@v1
         with:
           tag: ${{ github.ref_name }}
           fileName: "rtkmcp-*"
           out-file-path: assets/
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate SHA256 checksums
+      - name: Generate SHA256SUMS
         run: |
           cd assets
           sha256sum rtkmcp-* > SHA256SUMS.txt
