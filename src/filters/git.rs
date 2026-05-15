@@ -9,7 +9,7 @@ pub fn compact_status(porcelain: &str) -> String {
     let lines: Vec<&str> = porcelain.lines().filter(|l| !l.trim().is_empty()).collect();
 
     if lines.is_empty() {
-        return "clean — nothing to commit".to_string();
+        return "clean - nothing to commit".to_string();
     }
 
     let mut out: Vec<String> = Vec::new();
@@ -24,7 +24,7 @@ pub fn compact_status(porcelain: &str) -> String {
 
     // If only the branch line, nothing changed
     if lines.len() == 1 && lines[0].starts_with("##") {
-        out.push("clean — nothing to commit".to_string());
+        out.push("clean - nothing to commit".to_string());
         return out.join("\n");
     }
 
