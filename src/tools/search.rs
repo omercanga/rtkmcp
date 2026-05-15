@@ -10,12 +10,15 @@ pub fn call(args: &Value) -> CallToolResult {
         None => return CallToolResult::error("Missing required argument: pattern"),
     };
 
-    let path        = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
-    let file_type   = args.get("file_type").and_then(|v| v.as_str());
-    let max_results = args.get("max_results").and_then(|v| v.as_u64()).unwrap_or(50) as usize;
+    let path = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
+    let file_type = args.get("file_type").and_then(|v| v.as_str());
+    let max_results = args
+        .get("max_results")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(50) as usize;
 
     let raw = match run_search(&pattern, path, file_type) {
-        Ok(r)  => r,
+        Ok(r) => r,
         Err(e) => return CallToolResult::error(format!("Search failed: {}", e)),
     };
 
@@ -60,9 +63,11 @@ fn group_results(raw: &str, pattern: &str, max_results: usize) -> String {
 
     for line in raw.lines() {
         let parts: Vec<&str> = line.splitn(3, ':').collect();
-        if parts.len() < 3 { continue; }
+        if parts.len() < 3 {
+            continue;
+        }
 
-        let file    = parts[0].to_string();
+        let file = parts[0].to_string();
         let line_no = parts[1].parse::<usize>().unwrap_or(0);
         let content = truncate::line(parts[2].trim(), 120);
 
@@ -72,20 +77,28 @@ fn group_results(raw: &str, pattern: &str, max_results: usize) -> String {
     let total_matches: usize = by_file.values().map(|v| v.len()).sum();
     let file_count = by_file.len();
 
-    let mut out = format!("{} matches in {} file{}:\n",
-        total_matches, file_count, if file_count == 1 { "" } else { "s" });
+    let mut out = format!(
+        "{} matches in {} file{}:\n",
+        total_matches,
+        file_count,
+        if file_count == 1 { "" } else { "s" }
+    );
 
     let per_file_limit = (max_results / file_count.max(1)).max(3);
     let mut shown = 0usize;
 
     for (file, matches) in &by_file {
-        if shown >= max_results { break; }
+        if shown >= max_results {
+            break;
+        }
         out.push_str(&format!("\n{}:\n", file));
 
         for (ln, content) in matches.iter().take(per_file_limit) {
             out.push_str(&format!("  {}:  {}\n", ln, content));
             shown += 1;
-            if shown >= max_results { break; }
+            if shown >= max_results {
+                break;
+            }
         }
 
         let hidden = matches.len().saturating_sub(per_file_limit);

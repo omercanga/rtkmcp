@@ -10,14 +10,20 @@ pub fn call(args: &Value) -> CallToolResult {
         None => return CallToolResult::error("Missing required argument: path"),
     };
 
-    let level_str = args.get("level").and_then(|v| v.as_str()).unwrap_or("minimal");
-    let max_lines = args.get("max_lines").and_then(|v| v.as_u64()).unwrap_or(500) as usize;
+    let level_str = args
+        .get("level")
+        .and_then(|v| v.as_str())
+        .unwrap_or("minimal");
+    let max_lines = args
+        .get("max_lines")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(500) as usize;
     let level = lang::FilterLevel::from_str(level_str);
 
     let path = Path::new(path_str);
 
     let content = match fs::read_to_string(path) {
-        Ok(c)  => c,
+        Ok(c) => c,
         Err(e) => return CallToolResult::error(format!("Cannot read '{}': {}", path_str, e)),
     };
 
@@ -37,8 +43,8 @@ pub fn call(args: &Value) -> CallToolResult {
 
     let output = truncate::smart(&filtered, max_lines);
 
-    let line_count  = content.lines().count();
-    let out_count   = output.lines().count();
+    let line_count = content.lines().count();
+    let out_count = output.lines().count();
     let savings_pct = if line_count > 0 {
         100.0 - (out_count as f64 / line_count as f64 * 100.0)
     } else {

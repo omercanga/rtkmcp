@@ -17,11 +17,11 @@ impl Tool {
     pub fn detect(command: &str) -> Self {
         let cmd = command.split_whitespace().next().unwrap_or("");
         match cmd {
-            "cargo"              => Self::Cargo,
+            "cargo" => Self::Cargo,
             "npm" | "pnpm" | "yarn" | "bun" => Self::Npm,
-            "go"                 => Self::Go,
-            "dotnet"             => Self::Dotnet,
-            _                    => Self::Generic,
+            "go" => Self::Go,
+            "dotnet" => Self::Dotnet,
+            _ => Self::Generic,
         }
     }
 }
@@ -137,16 +137,26 @@ pub fn errors_only(raw: &str, tool: Tool) -> FilterResult {
     if blocks.is_empty() {
         // No errors — show pass summary
         let summary = if pass_count > 0 {
-            format!("OK — {} test{} passed", pass_count, if pass_count == 1 { "" } else { "s" })
+            format!(
+                "OK — {} test{} passed",
+                pass_count,
+                if pass_count == 1 { "" } else { "s" }
+            )
         } else {
             format!("OK ({})", tool_name(tool))
         };
         text.push_str(&summary);
     } else {
-        text.push_str(&format!("{} error{}:\n", error_count, if error_count == 1 { "" } else { "s" }));
+        text.push_str(&format!(
+            "{} error{}:\n",
+            error_count,
+            if error_count == 1 { "" } else { "s" }
+        ));
 
         for (i, block) in blocks.iter().take(max_blocks).enumerate() {
-            if i > 0 { text.push('\n'); }
+            if i > 0 {
+                text.push('\n');
+            }
             for line in block {
                 text.push_str(line);
                 text.push('\n');
@@ -166,7 +176,11 @@ pub fn errors_only(raw: &str, tool: Tool) -> FilterResult {
         }
     }
 
-    FilterResult { text: text.trim_end().to_string(), error_count, passed_count: pass_count }
+    FilterResult {
+        text: text.trim_end().to_string(),
+        error_count,
+        passed_count: pass_count,
+    }
 }
 
 fn extract_pass_count(line: &str) -> Option<usize> {
@@ -174,17 +188,18 @@ fn extract_pass_count(line: &str) -> Option<usize> {
     lazy_static! {
         static ref PASS_RE: Regex = Regex::new(r"(\d+)\s+passed").unwrap();
     }
-    PASS_RE.captures(line)
+    PASS_RE
+        .captures(line)
         .and_then(|c| c.get(1))
         .and_then(|m| m.as_str().parse().ok())
 }
 
 fn tool_name(tool: Tool) -> &'static str {
     match tool {
-        Tool::Cargo   => "cargo",
-        Tool::Npm     => "npm",
-        Tool::Go      => "go",
-        Tool::Dotnet  => "dotnet",
+        Tool::Cargo => "cargo",
+        Tool::Npm => "npm",
+        Tool::Go => "go",
+        Tool::Dotnet => "dotnet",
         Tool::Generic => "command",
     }
 }
@@ -204,7 +219,8 @@ mod tests {
 
     #[test]
     fn all_pass_returns_ok() {
-        let raw = "running 5 tests\ntest a ... ok\ntest b ... ok\ntest result: ok. 5 passed; 0 failed\n";
+        let raw =
+            "running 5 tests\ntest a ... ok\ntest b ... ok\ntest result: ok. 5 passed; 0 failed\n";
         let res = errors_only(raw, Tool::Cargo);
         assert_eq!(res.error_count, 0);
         assert!(res.text.contains("OK"));

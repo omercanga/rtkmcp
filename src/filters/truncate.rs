@@ -6,10 +6,9 @@ use regex::Regex;
 lazy_static! {
     static ref FUNC_SIG: Regex = Regex::new(
         r"^(pub\s+)?(async\s+)?(fn|def|function|func|class|struct|enum|trait|interface|type)\s+\w+"
-    ).unwrap();
-    static ref IMPORT_PAT: Regex = Regex::new(
-        r"^(use |import |from |require\(|#include)"
-    ).unwrap();
+    )
+    .unwrap();
+    static ref IMPORT_PAT: Regex = Regex::new(r"^(use |import |from |require\(|#include)").unwrap();
 }
 
 /// Truncate `content` to at most `max_lines`, keeping structurally important
@@ -86,12 +85,20 @@ mod tests {
     #[test]
     fn marker_accounts_for_all_lines() {
         let total = 200usize;
-        let max   = 20usize;
-        let input: String = (0..total).map(|i| format!("line {}", i)).collect::<Vec<_>>().join("\n");
-        let out   = smart(&input, max);
+        let max = 20usize;
+        let input: String = (0..total)
+            .map(|i| format!("line {}", i))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let out = smart(&input, max);
         let marker = out.lines().find(|l| l.contains("more lines")).unwrap();
-        let n: usize = marker.trim_start_matches('[')
-            .split_whitespace().next().unwrap().parse().unwrap();
+        let n: usize = marker
+            .trim_start_matches('[')
+            .split_whitespace()
+            .next()
+            .unwrap()
+            .parse()
+            .unwrap();
         let kept = out.lines().filter(|l| !l.contains("more lines")).count();
         assert_eq!(kept + n, total);
     }

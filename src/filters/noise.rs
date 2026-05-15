@@ -71,9 +71,13 @@ pub fn reduce(raw: &str) -> String {
 
 fn is_important(t: &str) -> bool {
     let tl = t.to_lowercase();
-    tl.starts_with("error") || tl.starts_with("warning") || tl.starts_with("fatal")
-        || tl.starts_with("fail") || tl.starts_with("panic")
-        || t.starts_with("-->") || t.starts_with("  |")
+    tl.starts_with("error")
+        || tl.starts_with("warning")
+        || tl.starts_with("fatal")
+        || tl.starts_with("fail")
+        || tl.starts_with("panic")
+        || t.starts_with("-->")
+        || t.starts_with("  |")
 }
 
 #[cfg(test)]

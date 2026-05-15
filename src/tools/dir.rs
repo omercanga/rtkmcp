@@ -4,14 +4,23 @@ use std::fs;
 use std::path::Path;
 
 const SKIP_DIRS: &[&str] = &[
-    "node_modules", ".git", "target", ".next", "dist", "build",
-    "__pycache__", ".pytest_cache", ".mypy_cache", "vendor", ".cargo",
+    "node_modules",
+    ".git",
+    "target",
+    ".next",
+    "dist",
+    "build",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    "vendor",
+    ".cargo",
 ];
 
 pub fn list(args: &Value) -> CallToolResult {
     let path_str = args.get("path").and_then(|v| v.as_str()).unwrap_or(".");
-    let depth    = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(2) as usize;
-    let depth    = depth.min(4); // hard cap — deep trees are expensive
+    let depth = args.get("depth").and_then(|v| v.as_u64()).unwrap_or(2) as usize;
+    let depth = depth.min(4); // hard cap — deep trees are expensive
 
     let path = Path::new(path_str);
     if !path.exists() {
@@ -23,7 +32,7 @@ pub fn list(args: &Value) -> CallToolResult {
 
     let mut out = format!("{}/\n", path.display());
     let mut file_count = 0usize;
-    let mut dir_count  = 0usize;
+    let mut dir_count = 0usize;
 
     walk(path, 1, depth, &mut out, &mut file_count, &mut dir_count);
 
@@ -36,8 +45,12 @@ pub fn list(args: &Value) -> CallToolResult {
 }
 
 fn walk(
-    dir: &Path, current_depth: usize, max_depth: usize,
-    out: &mut String, file_count: &mut usize, dir_count: &mut usize,
+    dir: &Path,
+    current_depth: usize,
+    max_depth: usize,
+    out: &mut String,
+    file_count: &mut usize,
+    dir_count: &mut usize,
 ) {
     let indent = "  ".repeat(current_depth);
 
@@ -67,7 +80,14 @@ fn walk(
             *dir_count += 1;
             out.push_str(&format!("{}{}/\n", indent, name_str));
             if current_depth < max_depth {
-                walk(&path, current_depth + 1, max_depth, out, file_count, dir_count);
+                walk(
+                    &path,
+                    current_depth + 1,
+                    max_depth,
+                    out,
+                    file_count,
+                    dir_count,
+                );
             } else {
                 // Count children without showing them
                 let n = fs::read_dir(&path).map(|r| r.count()).unwrap_or(0);
@@ -93,7 +113,11 @@ fn walk(
             out.push_str(line);
             out.push('\n');
         }
-        out.push_str(&format!("{}[+{} more files]\n", indent, file_lines.len() - 6));
+        out.push_str(&format!(
+            "{}[+{} more files]\n",
+            indent,
+            file_lines.len() - 6
+        ));
     }
 }
 

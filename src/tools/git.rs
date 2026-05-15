@@ -16,11 +16,16 @@ pub fn status(args: &Value) -> CallToolResult {
 }
 
 pub fn log(args: &Value) -> CallToolResult {
-    let cwd   = args.get("cwd").and_then(|v| v.as_str());
+    let cwd = args.get("cwd").and_then(|v| v.as_str());
     let limit = args.get("limit").and_then(|v| v.as_u64()).unwrap_or(20) as usize;
-    let extra: Vec<String> = args.get("args")
+    let extra: Vec<String> = args
+        .get("args")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
 
     let mut git_args = vec![
@@ -43,11 +48,19 @@ pub fn log(args: &Value) -> CallToolResult {
 }
 
 pub fn diff(args: &Value) -> CallToolResult {
-    let cwd       = args.get("cwd").and_then(|v| v.as_str());
-    let max_lines = args.get("max_lines").and_then(|v| v.as_u64()).unwrap_or(300) as usize;
-    let extra: Vec<String> = args.get("args")
+    let cwd = args.get("cwd").and_then(|v| v.as_str());
+    let max_lines = args
+        .get("max_lines")
+        .and_then(|v| v.as_u64())
+        .unwrap_or(300) as usize;
+    let extra: Vec<String> = args
+        .get("args")
         .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
 
     // First: get stat summary
